@@ -1,31 +1,30 @@
 {
-    "name": "setup-typst",
-    "version": "1.1.0-dev",
-    "main": "index.js",
-    "dependencies": {
-      "@actions/core": "^1.10.0",
-      "@octokit/rest": "^19.0.13",
-      "before-after-hook": "^2.2.3",
-      "deprecation": "^2.3.1",
-      "is-plain-object": "^5.0.0",
-      "lru-cache": "^6.0.0",
-      "node-fetch": "^2.6.11",
-      "once": "^1.4.0",
-      "semver": "^7.5.3",
-      "tr46": "^0.0.3",
-      "tunnel": "^0.0.6",
-      "universal-user-agent": "^6.0.0",
-      "uuid": "^8.3.2",
-      "webidl-conversions": "^3.0.1",
-      "whatwg-url": "^5.0.0",
-      "wrappy": "^1.0.2",
-      "yallist": "^4.0.0"
-    },
-    "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "author": "yusancky",
-    "license": "MIT",
-    "description": "A cross-OS action for installing Typst"
-  }
-  
+  "name": "setup-typst",
+  "version": "1.1.0-dev",
+  "main": "index.js",
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@octokit/rest": "^19.0.13",
+    "before-after-hook": "^2.2.3",
+    "deprecation": "^2.3.1",
+    "is-plain-object": "^5.0.0",
+    "lru-cache": "^6.0.0",
+    "node-fetch": "^2.6.11",
+    "once": "^1.4.0",
+    "semver": "^7.5.3",
+    "tr46": "^0.0.3",
+    "tunnel": "^0.0.6",
+    "universal-user-agent": "^6.0.0",
+    "uuid": "^8.3.2",
+    "webidl-conversions": "^3.0.1",
+    "whatwg-url": "^5.0.0",
+    "wrappy": "^1.0.2",
+    "yallist": "^4.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "yusancky",
+  "license": "MIT",
+  "description": "A cross-OS action for installing Typst"
+}
