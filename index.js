@@ -9,15 +9,17 @@ const semverSatisfies = require('semver/functions/satisfies')
 
 function runBash(command) {
     return new Promise((resolve, reject) => {
-      exec(command, { shell: true }, (error, stdout, stderr) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(stdout.trim());
-      });
+        exec(command, { shell: true }, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            console.log(`Command output: ${command}`);
+            console.log(stdout);
+            resolve(stdout.trim());
+        });
     });
-  }
+}
 
 async function downloadFromUrl(downloadUrl, fileName, token) {
     const response = await fetch(downloadUrl, {
