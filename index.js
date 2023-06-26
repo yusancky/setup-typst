@@ -8,23 +8,16 @@ const os = require("os");
 const semverSatisfies = require('semver/functions/satisfies')
 
 function runBash(command) {
-    exec(command, (error, stdout, stderr) => {
+    return new Promise((resolve, reject) => {
+      exec(command, { shell: true }, (error, stdout, stderr) => {
         if (error) {
-            console.error(`Error executing command: ${command}`);
-            console.error(error.message);
-            return;
+          reject(error);
+          return;
         }
-
-        if (stderr) {
-            console.error(`Command stderr: ${command}`);
-            console.error(stderr);
-            return;
-        }
-
-        console.log(`Command output: ${command}`);
-        console.log(stdout);
+        resolve(stdout.trim());
+      });
     });
-}
+  }
 
 async function downloadFromUrl(downloadUrl, fileName, token) {
     const response = await fetch(downloadUrl, {
