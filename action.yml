@@ -10,7 +10,7 @@ inputs:
     description: Exact version of Typst to use.
 
 runs:
-  using: node18
+  using: node16
   main: index.js
 
 branding:
