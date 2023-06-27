@@ -1,30 +1,38 @@
-const core = require('@actions/core');
-const { exec } = require('child_process');
+const core = require("@actions/core");
+const { exec } = require("child_process");
 const fs = require("fs");
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
 const { Octokit } = require("@octokit/rest");
 const octokit = new Octokit();
 const os = require("os");
-const semverSatisfies = require('semver/functions/satisfies')
+const semverSatisfies = require("semver/functions/satisfies");
 
 function removeAfterFirstDot(str) {
-  const dotIndex = str.indexOf('.');
-  if (dotIndex !== -1) {
-    return str.substring(0, dotIndex);
-  }
-  return str;
+    const dotIndex = str.indexOf(".");
+    if (dotIndex !== -1) {
+        return str.substring(0, dotIndex);
+    }
+    return str;
 }
 
 function runBash(command) {
     return new Promise((resolve, reject) => {
-        exec(command, { shell: true }, (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
-                return;
+        const childProcess = exec(command, { shell: true });
+
+        childProcess.stdout.on("data", (data) => {
+            process.stdout.write(data);
+        });
+
+        childProcess.stderr.on("data", (data) => {
+           process.stderr.write(data);
+        });
+
+        childProcess.on("exit", (code) => {
+            if (code === 0) {
+                resolve();
+            } else {
+                reject(new Error(`Command '${command}' exited with code ${code}`));
             }
-            console.log(`Command output: ${command}`);
-            console.log(stdout);
-            resolve(stdout.trim());
         });
     });
 }
@@ -40,31 +48,31 @@ async function downloadFromUrl(downloadUrl, fileName, token) {
         const fileStream = fs.createWriteStream(fileName);
         await new Promise((resolve, reject) => {
             response.body.pipe(fileStream);
-            response.body.on('error', (err) => {
+            response.body.on("error", (err) => {
                 reject(err);
             });
-            fileStream.on('finish', function () {
+            fileStream.on("finish", function () {
                 resolve();
             });
         });
     } else {
-        console.error('Failed to download file:', response.status, response.statusText);
+        console.error("Failed to download file:", response.status, response.statusText);
     }
 }
 
 async function main() {
-    const token = core.getInput('token');
-    const version = core.getInput('version');
+    const token = core.getInput("token");
+    const version = core.getInput("version");
 
     const owner = "typst";
     const repo = "typst";
     let assetName;
     if (os.platform() === "linux") {
-        assetName = semverSatisfies(version, '>=0.3.0') ? "typst-x86_64-unknown-linux-musl.tar.xz" : "typst-x86_64-unknown-linux-gnu.tar.gz";
+        assetName = semverSatisfies(version, ">=0.3.0") ? "typst-x86_64-unknown-linux-musl.tar.xz" : "typst-x86_64-unknown-linux-gnu.tar.gz";
     } else if (os.platform() === "win32") {
         assetName = "typst-x86_64-pc-windows-msvc.zip";
     } else {
-        assetName = semverSatisfies(version, '>=0.3.0') ? "typst-x86_64-apple-darwin.tar.xz" : "typst-x86_64-apple-darwin.tar.gz";
+        assetName = semverSatisfies(version, ">=0.3.0") ? "typst-x86_64-apple-darwin.tar.xz" : "typst-x86_64-apple-darwin.tar.gz";
     }
 
     const { data: releases } = await octokit.repos.listReleases({
@@ -87,23 +95,22 @@ async function main() {
         return;
     }
 
-    archiveName = (os.platform() === "win32" ? `c:\\${assetName}` : `/usr/local/${assetName}`);
-    fileName = (os.platform() === "win32" ? `c:\\typst\\${removeAfterFirstDot(assetName)}` : `/usr/local/typst/${removeAfterFirstDot(assetName)}`);
+    archiveName = os.platform() === "win32" ? `c:\\${assetName}` : `/usr/local/${assetName}`;
+    fileName = os.platform() === "win32" ? `c:\\typst\\${removeAfterFirstDot(assetName)}` : `/usr/local/typst/${removeAfterFirstDot(assetName)}`;
 
     downloadFromUrl(asset.browser_download_url, archiveName, token).catch((error) => {
-        console.error('Error occurred while downloading file:', error);
+        console.error("Error occurred while downloading file:", error);
     });
 
     if (os.platform() === "win32") {
         runBash(`7z x ${archiveName} -oc:\\typst`);
-    }
-    else if (semverSatisfies(version, '>=0.3.0')) {
+    } else if (semverSatisfies(version, ">=0.3.0")) {
         runBash(`sudo tar -xJf ${archiveName} -C /usr/local/typst/`);
     } else {
         runBash(`sudo tar -xzf ${archiveName} -C /usr/local/typst/`);
     }
 
-    runBash(`rm -f ${archiveName}`)
+    runBash(`rm -f ${archiveName}`);
 
     runBash(`echo "${fileName}" >> $GITHUB_PATH`);
 }
