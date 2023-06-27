@@ -7,6 +7,14 @@ const octokit = new Octokit();
 const os = require("os");
 const semverSatisfies = require('semver/functions/satisfies')
 
+function removeAfterFirstDot(str) {
+  const dotIndex = str.indexOf('.');
+  if (dotIndex !== -1) {
+    return str.substring(0, dotIndex);
+  }
+  return str;
+}
+
 function runBash(command) {
     return new Promise((resolve, reject) => {
         exec(command, { shell: true }, (error, stdout, stderr) => {
@@ -79,15 +87,25 @@ async function main() {
         return;
     }
 
-    downloadFromUrl(asset.browser_download_url, assetName, token).catch((error) => {
+    archiveName = (os.platform() === "win32" ? `c:\\${assetName} : `/usr/local/${assetName}`);
+    fileName = (os.platform() === "win32" ? `c:\\typst\\${removeAfterFirstDot(assetName)} : `/usr/local/typst/${removeAfterFirstDot(assetName)}`);
+
+    downloadFromUrl(asset.browser_download_url, archiveName, token).catch((error) => {
         console.error('Error occurred while downloading file:', error);
     });
 
-    runBash(os.platform() === "win32" ? `7z x ${assetName} -oc:\\typst` : `sudo tar -xzf ${assetName} -C /usr/local/typst/`);
+    if (os.platform() === "win32") {
+        runBash(`7z x ${archiveName} -oc:\\typst`);
+    }
+    else if (semverSatisfies(version, '>=0.3.0')) {
+        runBash(`sudo tar -xJf ${archiveName} -C /usr/local/typst/`);
+    } else {
+        runBash(`sudo tar -xzf ${archiveName} -C /usr/local/typst/`);
+    }
 
-    runBash(`rm -f ${assetName}`)
+    runBash(`rm -f ${archiveName}`)
 
-    runBash(os.platform() === "win32" ? `echo "c:\\typst\\${assetName}" >> $GITHUB_PATH` : `echo "/usr/local/typst/${assetName}" >> $GITHUB_PATH`);
+    runBash(`echo "${fileName}" >> $GITHUB_PATH`);
 }
 
 main().catch((error) => {
