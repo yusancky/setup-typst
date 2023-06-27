@@ -74,16 +74,16 @@ async function main() {
         return;
     }
 
-    archiveName = os.platform() === "win32" ? `c:\\${assetName}` : `/usr/local/${assetName}`;
-    fileName = os.platform() === "win32" ? `c:\\typst\\${removeAfterFirstDot(assetName)}` : `/usr/local/typst/${removeAfterFirstDot(assetName)}`;
+    archiveName = os.platform() === "win32" ? `c:/${assetName}` : `/usr/local/${assetName}`;
+    fileName = os.platform() === "win32" ? `c:/typst/${removeAfterFirstDot(assetName)}` : `/usr/local/typst/${removeAfterFirstDot(assetName)}`;
 
     downloadFromUrl(asset.browser_download_url, archiveName, token).catch((error) => {
         console.error("Error occurred while downloading file:", error);
     });
 
     if (os.platform() === "win32") {
-        var zip = new Zip(archiveName); 
-        zip.extractAllTo('c:\\typst');
+        var zip = new Zip(archiveName);
+        zip.extractAllTo('c:/typst');
     } else {
         fs.createReadStream(archiveName).pipe(tar.Extract({ path: '/usr/local/typst' }))
     }
