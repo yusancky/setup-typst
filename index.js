@@ -85,7 +85,7 @@ async function main() {
         var zip = new Zip(archiveName);
         zip.extractAllTo('C:/typst');
     } else {
-        fs.createReadStream(archiveName).pipe(tar.Extract({ path: '/usr/local/typst' }))
+        fs.createReadStream(archiveName).pipe(tar.x({ path: '/usr/local/typst' }))
     }
 
     if (fs.existsSync(archiveName)) {
