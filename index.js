@@ -1,12 +1,12 @@
 const core = require("@actions/core");
-const fs = require("fs");
-const fetch = require("node-fetch");
 const { Octokit } = require("@octokit/rest");
 const octokit = new Octokit();
+var Zip = require("adm-zip");
+const fs = require("fs");
+const fetch = require("node-fetch");
 const os = require("os");
 const semverSatisfies = require("semver/functions/satisfies");
 const tar = require("tar");
-const unzip = require("unzip");
 
 function removeAfterFirstDot(str) {
     const dotIndex = str.indexOf(".");
@@ -82,7 +82,8 @@ async function main() {
     });
 
     if (os.platform() === "win32") {
-        fs.createReadStream(archiveName).pipe(unzip.Extract({ path: 'c:\\typst' }));
+        var zip = new Zip(archiveName); 
+        zip.extractAllTo('c:\\typst');
     } else {
         fs.createReadStream(archiveName).pipe(tar.Extract({ path: '/usr/local/typst' }))
     }

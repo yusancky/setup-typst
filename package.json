@@ -5,11 +5,10 @@
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@octokit/rest": "^19.0.13",
-    "graceful-fs": "^4.2.11",
+    "adm-zip": "^0.5.10",
     "node-fetch": "^2.6.11",
     "semver": "^7.5.3",
-    "tar": "^6.1.15",
-    "unzip": "^0.1.11"
+    "tar": "^6.1.15"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
