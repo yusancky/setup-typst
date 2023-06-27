@@ -1,11 +1,11 @@
 const core = require("@actions/core");
 const fs = require("fs");
 const fetch = require("node-fetch");
-const tar = require("node-tar");
 const { Octokit } = require("@octokit/rest");
 const octokit = new Octokit();
 const os = require("os");
 const semverSatisfies = require("semver/functions/satisfies");
+const tar = require("tar");
 const unzip = require("unzip");
 
 function removeAfterFirstDot(str) {
