@@ -1,11 +1,12 @@
 const core = require("@actions/core");
-const { exec } = require("child_process");
 const fs = require("fs");
 const fetch = require("node-fetch");
+const tar = require("node-tar");
 const { Octokit } = require("@octokit/rest");
 const octokit = new Octokit();
 const os = require("os");
 const semverSatisfies = require("semver/functions/satisfies");
+const unzip = require("unzip");
 
 function removeAfterFirstDot(str) {
     const dotIndex = str.indexOf(".");
@@ -13,28 +14,6 @@ function removeAfterFirstDot(str) {
         return str.substring(0, dotIndex);
     }
     return str;
-}
-
-function runBash(command) {
-    return new Promise((resolve, reject) => {
-        const childProcess = exec(command, { shell: true });
-
-        childProcess.stdout.on("data", (data) => {
-            process.stdout.write(data);
-        });
-
-        childProcess.stderr.on("data", (data) => {
-           process.stderr.write(data);
-        });
-
-        childProcess.on("exit", (code) => {
-            if (code === 0) {
-                resolve();
-            } else {
-                reject(new Error(`Command '${command}' exited with code ${code}`));
-            }
-        });
-    });
 }
 
 async function downloadFromUrl(downloadUrl, fileName, token) {
@@ -103,14 +82,18 @@ async function main() {
     });
 
     if (os.platform() === "win32") {
-        runBash(`7z x ${archiveName} -oc:\\typst`);
-    } else if (semverSatisfies(version, ">=0.3.0")) {
-        runBash(`sudo tar -xJf ${archiveName} -C /usr/local/typst/`);
+        fs.createReadStream(archiveName).pipe(unzip.Extract({ path: 'c:\\typst' }));
     } else {
-        runBash(`sudo tar -xzf ${archiveName} -C /usr/local/typst/`);
+        fs.createReadStream(archiveName).pipe(tar.Extract({ path: '/usr/local/typst' }))
     }
 
-    runBash(`rm -f ${archiveName}`);
+    if (fs.existsSync(archiveName)) {
+        fs.unlink(archiveName, function (err) {
+            if (err) throw err;
+        });
+    } else {
+        console.log('file not present')
+    }
 
     core.addPath(fileName);
 }
