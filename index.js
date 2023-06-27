@@ -112,7 +112,7 @@ async function main() {
 
     runBash(`rm -f ${archiveName}`);
 
-    runBash(`echo "${fileName}" >> $GITHUB_PATH`);
+    core.addPath(fileName);
 }
 
 main().catch((error) => {
