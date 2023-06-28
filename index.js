@@ -17,26 +17,27 @@ function removeAfterFirstDot(str) {
 }
 
 async function downloadFromUrl(downloadUrl, fileName, token) {
-    const response = await fetch(downloadUrl, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+  const response = await fetch(downloadUrl, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    if (response.ok) {
-        const fileStream = fs.createWriteStream(fileName);
-        await new Promise((resolve, reject) => {
-            response.body.pipe(fileStream);
-            response.body.on("error", (err) => {
-                reject(err);
-            });
-            fileStream.on("finish", function () {
-                resolve();
-            });
-        });
-    } else {
-        console.error("Failed to download file:", response.status, response.statusText);
-    }
+  if (response.ok) {
+    const fileStream = fs.createWriteStream(fileName);
+    await new Promise((resolve, reject) => {
+      response.body.pipe(fileStream);
+      fileStream.on("finish", () => {
+        fileStream.close();
+        resolve();
+      });
+      fileStream.on("error", (error) => {
+        reject(error);
+      });
+    });
+  } else {
+    console.error("Failed to download file:", response.status, response.statusText);
+  }
 }
 
 async function main() {
@@ -92,8 +93,6 @@ async function main() {
         fs.unlink(archiveName, function (err) {
             if (err) throw err;
         });
-    } else {
-        console.log('file not present')
     }
 
     core.addPath(fileName);
