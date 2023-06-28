@@ -4,9 +4,8 @@
   "main": "index.js",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@octokit/rest": "^19.0.13",
     "adm-zip": "^0.5.10",
-    "node-fetch": "^2.6.11",
+    "axios": "^1.4.0",
     "semver": "^7.5.3",
     "tar": "^6.1.15"
   },

@@ -1,104 +1,80 @@
 const core = require("@actions/core");
-const { Octokit } = require("@octokit/rest");
-const octokit = new Octokit();
 var Zip = require("adm-zip");
+const axios = require('axios');
 const fs = require("fs");
-const fetch = require("node-fetch");
 const os = require("os");
 const semverSatisfies = require("semver/functions/satisfies");
 const tar = require("tar");
 
 function removeAfterFirstDot(str) {
-    const dotIndex = str.indexOf(".");
-    if (dotIndex !== -1) {
-        return str.substring(0, dotIndex);
-    }
-    return str;
+  const dotIndex = str.indexOf(".");
+  if (dotIndex !== -1) {
+    return str.substring(0, dotIndex);
+  }
+  return str;
 }
 
-async function downloadFromUrl(downloadUrl, fileName, token) {
-  const response = await fetch(downloadUrl, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+async function downloadFromUrl(downloadUrl, fileName) {
+  const response = await axios({
+    method: 'get',
+    url: downloadUrl,
+    responseType: 'stream',
   });
 
-  if (response.ok) {
-    const fileStream = fs.createWriteStream(fileName);
-    await new Promise((resolve, reject) => {
-      response.body.pipe(fileStream);
-      fileStream.on("finish", () => {
-        fileStream.close();
-        resolve();
-      });
-      fileStream.on("error", (error) => {
-        reject(error);
-      });
+  const fileStream = fs.createWriteStream(fileName);
+  response.data.pipe(fileStream);
+
+  return new Promise((resolve, reject) => {
+    fileStream.on('finish', () => {
+      fileStream.close();
+      resolve();
     });
-  } else {
-    console.error("Failed to download file:", response.status, response.statusText);
-  }
+
+    fileStream.on('error', (err) => {
+      reject(err);
+    });
+  });
 }
 
 async function main() {
-    const token = core.getInput("token");
-    const version = core.getInput("version");
+  const version = core.getInput("version");
 
-    const owner = "typst";
-    const repo = "typst";
-    let assetName;
-    if (os.platform() === "linux") {
-        assetName = semverSatisfies(version, ">=0.3.0") ? "typst-x86_64-unknown-linux-musl.tar.xz" : "typst-x86_64-unknown-linux-gnu.tar.gz";
-    } else if (os.platform() === "win32") {
-        assetName = "typst-x86_64-pc-windows-msvc.zip";
-    } else {
-        assetName = semverSatisfies(version, ">=0.3.0") ? "typst-x86_64-apple-darwin.tar.xz" : "typst-x86_64-apple-darwin.tar.gz";
-    }
+  let assetName;
+  if (os.platform() === "linux") {
+    assetName = semverSatisfies(version, ">=0.3.0") ? "typst-x86_64-unknown-linux-musl.tar.xz" : "typst-x86_64-unknown-linux-gnu.tar.gz";
+  } else if (os.platform() === "win32") {
+    assetName = "typst-x86_64-pc-windows-msvc.zip";
+  } else {
+    assetName = semverSatisfies(version, ">=0.3.0") ? "typst-x86_64-apple-darwin.tar.xz" : "typst-x86_64-apple-darwin.tar.gz";
+  }
+  let archiveName = os.platform() === "win32" ? `C:/${assetName}` : `/usr/local/${assetName}`;
+  let fileName = os.platform() === "win32" ? `C:/typst/${removeAfterFirstDot(assetName)}` : `/usr/local/typst/${removeAfterFirstDot(assetName)}`;
 
-    const { data: releases } = await octokit.repos.listReleases({
-        owner,
-        repo,
-        auth: token,
+  downloadFromUrl(`https://github.com/typst/typst/releases/download/${version}/${assetName}`, archiveName)
+    .then(() => {
+      console.log('Typst downloaded successfully!');
+    })
+    .catch((error) => {
+      console.error('Failed to download Typst:', error);
     });
 
-    const release = releases.find((release) => release.tag_name === version);
+  if (os.platform() === "win32") {
+    var zip = new Zip(archiveName);
+    zip.extractAllTo('C:/typst');
+  } else {
+    fs.createReadStream(archiveName).pipe(tar.x({ path: '/usr/local/typst' }))
+  }
 
-    if (!release) {
-        console.log(`Release ${version} not found.`);
-        return;
-    }
-
-    const asset = release.assets.find((asset) => asset.name === assetName);
-
-    if (!asset) {
-        console.log(`Asset ${assetName} not found in release ${version}.`);
-        return;
-    }
-
-    archiveName = os.platform() === "win32" ? `C:/${assetName}` : `/usr/local/${assetName}`;
-    fileName = os.platform() === "win32" ? `C:/typst/${removeAfterFirstDot(assetName)}` : `/usr/local/typst/${removeAfterFirstDot(assetName)}`;
-
-    downloadFromUrl(asset.browser_download_url, archiveName, token).catch((error) => {
-        console.error("Error occurred while downloading file:", error);
+  if (fs.existsSync(archiveName)) {
+    fs.unlink(archiveName, function (err) {
+      if (err) throw err;
     });
+  }
 
-    if (os.platform() === "win32") {
-        var zip = new Zip(archiveName);
-        zip.extractAllTo('C:/typst');
-    } else {
-        fs.createReadStream(archiveName).pipe(tar.x({ path: '/usr/local/typst' }))
-    }
-
-    if (fs.existsSync(archiveName)) {
-        fs.unlink(archiveName, function (err) {
-            if (err) throw err;
-        });
-    }
-
-    core.addPath(fileName);
+  core.addPath(fileName);
 }
 
 main().catch((error) => {
-    console.error(error);
-    process.exit(1);
+  console.error(error);
+  process.exit(1);
 });
